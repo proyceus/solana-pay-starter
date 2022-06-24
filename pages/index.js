@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import HeadComponent from "../components/Head";
 import { PublicKey } from "@solana/web3.js";
 import { useWallet } from "@solana/wallet-adapter-react";
@@ -11,6 +11,18 @@ const TWITTER_LINK = `https://twitter.com/${TWITTER_HANDLE}`;
 
 const App = () => {
   const { publicKey } = useWallet();
+  const [products, setProducts] = useState([]);
+
+  useEffect(() => {
+    if (publicKey) {
+      fetch("/api/fetchProducts")
+        .then((response) => response.json())
+        .then((data) => {
+          setProducts(data);
+          console.log("Products", data);
+        });
+    }
+  }, [publicKey]);
 
   const renderNotConnectedContainer = () => (
     <div>
