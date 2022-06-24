@@ -1,9 +1,10 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import HeadComponent from "../components/Head";
 import { PublicKey } from "@solana/web3.js";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { render } from "react-dom";
+import Product from "../components/Product";
 
 // Constants
 const TWITTER_HANDLE = "_buildspace";
@@ -36,23 +37,26 @@ const App = () => {
     </div>
   );
 
+  const renderItemBuyContainer = () => (
+    <div className="products-container">
+      {products.map((product) => (
+        <Product key={product.id} product={product} />
+      ))}
+    </div>
+  );
+
   return (
     <div className="App">
       <HeadComponent />
       <div className="container">
         <header className="header-container">
           <p className="header">Pie's Bazaar</p>
-          <button
-            onClick={() => {
-              console.log(publicKey);
-            }}
-          >
-            Clicky
-          </button>
           <p className="sub-text">Trinkets and gadgets galore!</p>
         </header>
 
-        <main>{publicKey ? "Connected!" : renderNotConnectedContainer()}</main>
+        <main>
+          {publicKey ? renderItemBuyContainer() : renderNotConnectedContainer()}
+        </main>
 
         <div className="footer-container">
           <img
