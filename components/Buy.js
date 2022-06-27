@@ -1,16 +1,27 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Keypair, Transaction } from "@solana/web3.js";
+import {
+  findReference,
+  FindReferenceError,
+  findReferenceError,
+} from "@solana/pay";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { InfinitySpin } from "react-loader-spinner";
 import IPFSDownload from "./IpfsDownload";
+
+const STATUS = {
+  Initial: "Initial",
+  Submitted: "Submitted",
+  Paid: "Paid",
+};
 
 const Buy = ({ itemID }) => {
   const { connection } = useConnection();
   const { publicKey, sendTransaction } = useWallet();
   const orderID = useMemo(() => Keypair.generate().publicKey, []);
 
-  const [paid, setPaid] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [status, setStatus] = useState(STATUS.initial);
 
   const order = useMemo(
     () => ({
@@ -40,13 +51,44 @@ const Buy = ({ itemID }) => {
       console.log(
         `Transaction sent: https://solscan.io/tx/${txHash}?cluster=devnet`
       );
-      setPaid(true);
+      setPaid(STATUS.Submitted);
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (status === STATUS.Submitted) {
+      setLoading(true);
+      const interval = setInterval(async () => {
+        try {
+          const result = await findReference(connection, orderID);
+          console.log("Finding tx refernce", result.confirmationStatus);
+          if (
+            result.confirmationStatus === "confirmed" ||
+            result.confirmationStatus === "finalized"
+          ) {
+            clearInterval(interval);
+            setStatus(STATUS.paid);
+            setLoading(false);
+            alert("Thank you for your purchase");
+          }
+        } catch (e) {
+          if (e instanceof FindReferenceError) {
+            return null;
+          }
+          console.error("Unknown erro", e);
+        } finally {
+          setLoading(false);
+        }
+      }, 1000);
+      return () => {
+        clearInterval(interval);
+      };
+    }
+  }, [status]);
 
   if (!publicKey) {
     return (
@@ -62,7 +104,7 @@ const Buy = ({ itemID }) => {
 
   return (
     <div>
-      {paid ? (
+      {status === STATUS.Paid ? (
         <IPFSDownload
           filename="mafiapack.zip"
           hash="QmdgkZfev6Ugru2Jsr9N9EAL3dpVL4PNSgpRGA8x54SQ1K"
