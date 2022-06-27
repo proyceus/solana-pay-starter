@@ -1,6 +1,6 @@
 import React from "react";
 import styles from "../styles/Product.module.css";
-import IPFSDownload from "./IpfsDownload";
+import Buy from "./Buy";
 
 const Product = ({ product }) => {
   const { id, name, price, description, image_url } = product;
@@ -19,11 +19,7 @@ const Product = ({ product }) => {
 
         <div className={styles.product_action}>
           <div className={styles.product_price}>{price} USDC</div>
-          <IPFSDownload
-            filename="mafiapack.zip"
-            hash="QmdgkZfev6Ugru2Jsr9N9EAL3dpVL4PNSgpRGA8x54SQ1K"
-            cta="Download pack"
-          />
+          <Buy itemID={id} />
         </div>
       </div>
     </div>
