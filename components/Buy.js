@@ -4,7 +4,7 @@ import { findReference, FindReferenceError } from "@solana/pay";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { InfinitySpin } from "react-loader-spinner";
 import IPFSDownload from "./IpfsDownload";
-import { addOrder } from "../lib/api";
+import { addOrder, hasPurchased, fetchItem } from "../lib/api";
 
 const STATUS = {
   Initial: "Initial",
@@ -16,6 +16,8 @@ const Buy = ({ itemID }) => {
   const { connection } = useConnection();
   const { publicKey, sendTransaction } = useWallet();
   const orderID = useMemo(() => Keypair.generate().publicKey, []);
+
+  const [item, setItem] = useState(null);
 
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState(STATUS.initial);
@@ -57,6 +59,19 @@ const Buy = ({ itemID }) => {
   };
 
   useEffect(() => {
+    const checkPurchased = async () => {
+      const purchased = await hasPurchased(publicKey, itemID);
+      if (purchased) {
+        setStatus(STATUS.Paid);
+        const item = await fetchItem(itemID);
+        setItem(item);
+      }
+    };
+
+    checkPurchased();
+  }, [publicKey, itemID]);
+
+  useEffect(() => {
     if (status === STATUS.Submitted) {
       setLoading(true);
       const interval = setInterval(async () => {
@@ -85,6 +100,15 @@ const Buy = ({ itemID }) => {
       return () => {
         clearInterval(interval);
       };
+    }
+
+    async function getItem(itemID) {
+      const item = await fetchItem(itemID);
+      setItem(item);
+    }
+
+    if (status === STATUS.Paid) {
+      getItem(itemID);
     }
   }, [status]);
 
