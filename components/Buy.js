@@ -1,13 +1,10 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { Keypair, Transaction } from "@solana/web3.js";
-import {
-  findReference,
-  FindReferenceError,
-  findReferenceError,
-} from "@solana/pay";
+import { findReference, FindReferenceError } from "@solana/pay";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { InfinitySpin } from "react-loader-spinner";
 import IPFSDownload from "./IpfsDownload";
+import { addOrder } from "../lib/api";
 
 const STATUS = {
   Initial: "Initial",
@@ -51,7 +48,7 @@ const Buy = ({ itemID }) => {
       console.log(
         `Transaction sent: https://solscan.io/tx/${txHash}?cluster=devnet`
       );
-      setPaid(STATUS.Submitted);
+      setStatus(STATUS.Submitted);
     } catch (error) {
       console.error(error);
     } finally {
@@ -65,21 +62,22 @@ const Buy = ({ itemID }) => {
       const interval = setInterval(async () => {
         try {
           const result = await findReference(connection, orderID);
-          console.log("Finding tx refernce", result.confirmationStatus);
+          console.log("Finding tx reference", result.confirmationStatus);
           if (
             result.confirmationStatus === "confirmed" ||
             result.confirmationStatus === "finalized"
           ) {
             clearInterval(interval);
-            setStatus(STATUS.paid);
+            setStatus(STATUS.Paid);
             setLoading(false);
+            addOrder(order);
             alert("Thank you for your purchase");
           }
         } catch (e) {
           if (e instanceof FindReferenceError) {
             return null;
           }
-          console.error("Unknown erro", e);
+          console.error("Unknown error", e);
         } finally {
           setLoading(false);
         }
